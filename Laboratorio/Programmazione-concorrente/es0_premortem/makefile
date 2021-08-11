@@ -6,7 +6,7 @@ LFLAGS=-lpthread
 all: es0_premortem.exe
 
 es0_premortem.exe: es0_premortem.o
-	gcc ${CFLAGS} -0 es0_premortem.exe es0_premortem.o ${LFlAGS}
+	gcc ${CFLAGS} -O es0_premortem.exe es0_premortem.o ${LFlAGS}
 
 es0_premortem.o: es0_premortem.c
 	gcc -c ${CFLAGS} es0_premortem.c
