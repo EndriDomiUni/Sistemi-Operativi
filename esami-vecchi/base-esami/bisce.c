@@ -2,7 +2,7 @@
 */
 
 #ifndef _THREAD_SAFE
-	#define _THREAD_SAFE
+#define _THREAD_SAFE
 #endif
 
 #include "printerror.h"
