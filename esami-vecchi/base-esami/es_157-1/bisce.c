@@ -102,7 +102,7 @@ void *Biscia (void *arg)
 
 		/* sveglio le biscie "del groviglio" */
 		/* prima parte DA COMPLETARE A PARTIRE DA QUI SOTTO */
-		
+		DBGpthread_cond_broadcast(&cond,Plabel);
 
 		/* FINE prima parte DA COMPLETARE FINO A QUI */
 		/* impostiamo nuovo groviglio vuoto */
@@ -119,7 +119,9 @@ void *Biscia (void *arg)
 		/* attendo completamento del mio groviglio */
 
 		/* seconda parte DA COMPLETARE A PARTIRE DA QUI SOTTO */
-		
+		do {
+			DBGpthread_cond_wait(&cond, &mutex, Plabel);
+		} while(SituazioneGroviglio(IndiceUltimoGroviglio)==NONCOMPLETO);
 
 		/* FINE seconda parte DA COMPLETARE FINO A QUI */
 	}
