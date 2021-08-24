@@ -128,19 +128,19 @@ void *Cliente (void *arg)
 		   ALLORA mi devo mettere in coda deposito */
 		/* prima parte DA COMPLETARE qui sotto */
 
-
-
-
+		if (NumClientiInCodaDeposito > 1 || StatoDistributore != PIATTOVUOTO) {
+			printf("cliente %s attende in coda deposito\n", Plabel);
+			fflush(stdout);
+			DBGpthread_cond_wait(&condAttesaPiattoVuoto, &mutex, Plabel);
+		}
 
 		/* sono uscito da coda deposito, ora tocca a me depositare */
 		/* ma devo impedire ad altri clienti
 		   di appoggiare il bicchiere mentre lo sto depositando io*/
-
-
-
-
-
+	
+		StatoDistributore = APPOGGIANDOBICCHIERE;
 		/* fine prima parte da COMPLETARE  FINO A QUI */
+
 		printf("cliente %s inizia deposito bicchiere\n", Plabel);
 		fflush(stdout);
 		DBGpthread_mutex_unlock(&mutex,Plabel)
@@ -173,12 +173,9 @@ void *Cliente (void *arg)
 		   ALLORA mi devo mettere in coda prelievo
 		*/
 		/* seconda parte DA COMPLETARE qui sotto */
-
-
-
-
-
-
+		if (NumClientiInCodaPrelievo > 1 || StatoDistributore == BICCHIEREVUOTO) {
+			DBGpthread_cond_wait(&condAttesaBicchierePieno, &mutex, Plabel);
+		}
 
 		/* fine seconda parte da COMPLETARE  FINO A QUI */
 		/* ora tocca a me prelevare bicchiere pieno */
@@ -190,9 +187,7 @@ void *Cliente (void *arg)
 		/* ora il piatto e' vuoto, avviso che si puo' depositarea bicchiere */
 		/* terza parte DA COMPLETARE qui sotto */
 
-
-
-
+		DBGpthread_cond_signal(&condAttesaPiattoVuoto, Plabel);
 
 		/* fine terza parte da COMPLETARE  FINO A QUI */
 		DBGpthread_mutex_unlock(&mutex,Plabel); 
