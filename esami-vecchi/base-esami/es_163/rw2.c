@@ -83,7 +83,7 @@ void *Scrittore (void *arg)
 		/* scrittore impiega tempo a scrivere */
 		attendi(SECSCRITTURA,SECSCRITTURA);
 
-		printf("Scrittore %s ha scritto %lu \n", Slabel, valGlobale ); 
+		printf("Scrittore %s ha scritto %llu \n", Slabel, valGlobale ); 
 		fflush(stdout);
 
 		/* rilascio mutua esclusione */
@@ -136,7 +136,7 @@ void *Lettore (char mioTipoLettore, intptr_t indice)
 		   per il gruppo dei lettori, quindi
 		   devo prendere io la mutua esclusione per tutto il gruppo dei lettori
 		*/
-		if ( numLettoriInLettura <= 0 ) {
+		if ( numLettoriInLettura < 0 ) {
 			/* attendo di poter leggere, sono il primo */
 			printf("Lettore %s sarebbe il primo a leggere\n", Llabel);
 			fflush(stdout);
@@ -163,7 +163,7 @@ void *Lettore (char mioTipoLettore, intptr_t indice)
 		/* il lettore impiega un po' di tempo a leggere */
 		attendi(SECLETTURA,SECLETTURA);
 		/* ho letto */
-		printf("Lettore %s ha letto %lu \n", Llabel, valGlobale ); 
+		printf("Lettore %s ha letto %llu \n", Llabel, valGlobale ); 
 		fflush(stdout);
 
 		/* riprendo la mutua esclusione sulla variabile dei lettori */
