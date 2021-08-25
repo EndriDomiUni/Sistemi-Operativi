@@ -80,8 +80,9 @@ void *Cane (void *arg)
 			   e poi posso andare a fare pipi  */
 			/* prima parte DA COMPLETARE A PARTIRE DA QUI SOTTO */
 			
-			while (NumCaniDietro != -1) {
-				DBGpthread_cond_wait(&cond, Plabel);
+			while (NumCaniDietro[indice] != 0) {
+				printf("cane %s attende di avere chiappe libere da annusare \n", Plabel);
+				DBGpthread_cond_wait(&cond, &mutex, Plabel);
 			}
 			
 
@@ -129,7 +130,8 @@ void *Cane (void *arg)
 				/* mi aggiungo a chi annusa cane K */
 				/* seconda parte DA COMPLETARE A PARTIRE DA QUI SOTTO */
 
-				
+				NumCaniDietro[K]++;
+				DBGpthread_mutex_unlock(&mutex, Plabel);
 
 				/* FINE seconda parte DA COMPLETARE */
 				/* annuso */
@@ -143,7 +145,10 @@ void *Cane (void *arg)
 				/* avviso che ho smesso di annusare */
 				/* terza parte DA COMPLETARE A PARTIRE DA QUI SOTTO */
 
-				
+				if (NumCaniDietro[K] == 0) {
+					DBGpthread_cond_broadcast(&cond, Plabel);
+				}
+					
 				/* il cane ha avvisato che ha finito con la signal e ora va ad annusare le margerite per riprendersi */
 				/* FINE terza parte DA COMPLETARE */
 				DBGpthread_mutex_unlock(&mutex,Plabel);
