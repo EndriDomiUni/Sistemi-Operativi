@@ -93,9 +93,12 @@ void *Scrittore (void *arg)
 		/* INIZIO PRIMA PARTE DA COMPLETARE PER TIPI LETTORI DA QUI */
 		/* ATTENZIONE a quel che fate qui sotto */
 
+		DBGpthread_mutex_lock(&mutexBuffer,Slabel);
+		DBGpthread_cond_broadcast(&condAttesaLettoriAltroTipo, Slabel);
+		printf("Scrittore %s sveglia lettori in attesa \n", Slabel);
+		fflush(stdout);
 
-
-
+		DBGpthread_mutex_unlock(&mutexVarLettori, Slabel);
 		/* FINE PRIMA PARTE DA COMPLETARE PER TIPI LETTORI FINO A QUI */
 
 		/* scrittore fa un giro non in mutua esclusione */
@@ -118,7 +121,11 @@ void *Lettore (char mioTipoLettore, intptr_t indice)
 		   e in tal caso devo aspettare */
 		/*  INIZIO SECONDA PARTE DA COMPLETARE PER TIPI LETTORI DA QUI */
 		
-
+		while ( numLettoriInLettura > 0 && tipoLettoreInLettura != mioTipoLettore) {
+			printf("Lettore %s attende fine altri lettori \n", Llabel);
+			fflush(stdout);
+			DBGpthread_cond_wait(&condAttesaLettoriAltroTipo, &mutexVarLettori, Llabel);
+		}
 
 
 
@@ -140,7 +147,7 @@ void *Lettore (char mioTipoLettore, intptr_t indice)
 			   CHE NON sono del mio tipo 
 			*/
 			/*  INIZIO TERZA PARTE DA COMPLETARE PER TIPI LETTORI DA QUI */
-
+			tipoLettoreInLettura=mioTipoLettore;
 
 			/*  FINE TERZA PARTE DA COMPLETARE PER TIPI LETTORI FINO A QUI */
 		}
@@ -176,7 +183,10 @@ void *Lettore (char mioTipoLettore, intptr_t indice)
 			   e percio' li devo svegliare  */
 			/* INIZIO QUARTA PARTE DA COMPLETARE PER TIPI LETTORI DA QUI */
 
-
+			tipoLettoreInLettura='0';
+			DBGpthread_cond_broadcast(&condAttesaLettoriAltroTipo, Llabel);
+			printf("Ultimo lettore %s sveglia lettori di altro tipo\n", Llabel);
+			fflush(stdout);
 
 
 			/*  FINE QUARTA PARTE DA COMPLETARE PER TIPI LETTORI FINO A QUI */
