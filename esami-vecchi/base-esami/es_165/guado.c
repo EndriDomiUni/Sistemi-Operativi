@@ -90,16 +90,12 @@ void *Canguro (void *arg)
 				/* PRIMA PARTE DA COMPLETARE A PARTIRE DA QUI */
 
 				/* aspetto che il masso su cui voglio saltare sia libero */
-				if( Masso[passifatti]==OCCUPATO ) {
-					printf("canguro %s attende che masso %i si liberi\n", Plabel, passifatti);
-					fflush(stdout);
-					DBGpthread_cond_wait(&cond[passifatti],&mutex,Plabel);
-				}
+				
 				/* ora che il prossimo masso e' libero 
 				   lo occupo io preliminarmente */
 
 
-				Masso[passifatti]=OCCUPATO;
+				
 
 				/* FINE PRIMA PARTE DA COMPLETARE FINO A QUI */
 
@@ -110,8 +106,7 @@ void *Canguro (void *arg)
 				*/
 				if( passifatti>0 ) {
 					/* SECONDA PARTE DA COMPLETARE A PARTIRE DA QUI */
-					Masso[passifatti-1]=LIBERO;
-					DBGpthread_cond_signal(&cond[passifatti-1],Plabel);
+				
 
 
 					/* FINE SECONDA PARTE DA COMPLETARE FINO A QUI */
@@ -139,10 +134,10 @@ void *Canguro (void *arg)
 				/* TERZA PARTE DA COMPLETARE A PARTIRE DA QUI */
 
 				/* libero il masso precedente */
-				Masso[passifatti-1]=LIBERO;
+				
 
 				/* avviso che il masso precedente e' libero */
-				DBGpthread_cond_signal(&cond[passifatti-1],Plabel);
+				
 
 
 				/* FINE TERZA PARTE DA COMPLETARE FINO A QUI */
