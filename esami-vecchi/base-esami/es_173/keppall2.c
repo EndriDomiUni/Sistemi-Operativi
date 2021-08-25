@@ -32,9 +32,9 @@ intptr_t indice_morto; /* Usato solo per l'output: indice ultimo pthread morto o
 pthread_mutex_t  mutex=PTHREAD_MUTEX_INITIALIZER;
 /* qui potete aggiungere altre vostre variabili globali, se vi servono */
 /* COMPLETARE PRIMA PARTE A PARTIRE DA QUI */
-pthread_cond_t condCoda;
-pthread_cond_t condMain;
-int morente;
+
+pthread_cond_t condVoglioMorire=PTHREAD_COND_INITIALIZER;
+pthread_cond_t condJoin=PTHREAD_COND_INITIALIZER;
 
 
 /* COMPLETARE PRIMA PARTE FINO A QUI */
@@ -80,11 +80,12 @@ void *Keppall2 (void *arg)
 	/* aspetto se sta gia' morendo qualcuno, cioe' aspetto se
 	   c'e' gia' qualcuno in attesa che gli facciano la join */
 
-	while(morente != indice) {
-		DBGpthread_cond_wait(&condCoda, &mutex, Plabel);
+	while(morto==1) {
+		printf("keppall %s aspetta il proprio turno di morire\n", Plabel);
+		fflush(stdout);
+		DBGpthread_cond_wait(&condVoglioMorire, &mutex, Plabel);
 	}
 
-	morente = indice;
 
 	/* COMPLETARE SECONDA PARTE FINO A QUI */
 	printf("keppall %s ora puo morire\n", Plabel);
@@ -99,10 +100,9 @@ void *Keppall2 (void *arg)
 
 	/* avviso il main che sono morto */
 	/* sveglio il main perche' faccia la join per me */
+	DBGpthread_cond_signal(&condJoin,Plabel);
+	
 
-	DBGpthread_cond_signal(&condMain, Plabel);
-	DBGpthread_cond_signal(&condCoda, Plabel);
-	pthread_exit(morto);
 
 
 
@@ -120,11 +120,7 @@ int main ( int argc, char* argv[] )
 	intptr_t i, i2;
 	void *ptr;
 
-	/*Mie condizioni*/
-	rc=DBGpthread_mutex_init(&condCoda,NULL,Plabel);
-	if(rc) PrintERROR_andExit(rc,"Pthread_cond_init failed");
-	rc=DBGpthread_mutex_init(&condMain,NULL,Plabel);
-	if(rc) PrintERROR_andExit(rc,"Pthread_cond_init failed");
+	
 
 	/* inizializzazione generazione numeri random */
 	srandom( time(NULL) );
@@ -144,9 +140,11 @@ int main ( int argc, char* argv[] )
 
 		DBGpthread_mutex_lock(&mutex,"main"); 
 		/* COMPLETARE TERZA PARTE A PARTIRE DA QUI */
+		if (morto==0) {
+			DBGpthread_cond_wait(&condJoin, &mutex, "main");
+		}
 
-
-		DBGpthread_cond_wait(&condMain, &mutex, Plabel);
+		
 
 		/* Ora sono stato svegliato da un thread che vuole morire e 
 		   che ha gia' messo il proprio id nella var th_morto
@@ -154,7 +152,8 @@ int main ( int argc, char* argv[] )
 		   Attendo che il thread sia morto veramente. */
 
 		/* Faccio la join per quel thread */
-		pthread_join(&th, indice_morto);
+		rc = pthread_join(th_morto, &ptr);
+		if (rc != 0) PrintERROR_andExit(errno, "pthread_join failed");
 
 
 		/* ora so per certo che il thread e' morto */
@@ -162,9 +161,9 @@ int main ( int argc, char* argv[] )
 		fflush(stdout);
 
 		/* avviso che ora puo' morire il prossimo keppall */
-
-		DBGpthread_cond_signal(&condCoda,Plabel);
-		morente = -1;
+		morto=0;
+		DBGpthread_cond_signal(&condVoglioMorire, "main");
+		
 
 
 		/* COMPLETARE TERZA PARTE FINO A QUI */
