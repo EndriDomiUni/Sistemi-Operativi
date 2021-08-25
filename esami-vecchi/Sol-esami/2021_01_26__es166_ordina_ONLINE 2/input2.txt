@@ -1,0 +1,4 @@
+gatto,52
+alfa,31
+orto,9
+disco,12
