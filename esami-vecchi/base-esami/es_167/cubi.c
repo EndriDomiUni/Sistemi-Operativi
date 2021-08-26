@@ -43,7 +43,7 @@ int NumCubiSulTavolo=0;
 int AzionePossibile=DEPOSITOCUBI; 
 /* INIZIO PRIMA PARTE DA COMPLETARE A PARTIRE DA QUI */
 /* aggiungete altre vostre variabili se vi servono */
-int NumCubiInViaDiDeposito=0;
+
 
 /* FINE PRIMA PARTE DA COMPLETARE FINO A QUI */
 
@@ -113,7 +113,7 @@ void *Depositatori (void *arg)
 		   - dico se c'e' spazio per depositare altri cubi.
 		   - non consento di prelevare i cubi
 		*/
-		NumCubiSulTavolo+=NUMCUBIDADEPOSITAREOGNIVOLTA; 
+		 
 
 
 		/* formalmente i cubi ci sono ma non sono completamente appoggiati,
@@ -123,7 +123,7 @@ void *Depositatori (void *arg)
 		   Percio' tengo traccia di quanti sono 
 		   ancora non completamente appoggiati  
 		*/
-		NumCubiInViaDiDeposito++; 
+		
 
 		/* FINE SECONDA PARTE DA COMPLETARE FINO A QUI */
 		/* depositatore ha iniziato a depositare cubo sul tavolo */
@@ -140,15 +140,11 @@ void *Depositatori (void *arg)
 		fflush(stdout);
 		/* attenzione, qui altri potrebbero essere stati 
 		   piu' veloci di me a completare il deposito */
-		NumCubiInViaDiDeposito--;
-		if( NumCubiSulTavolo==NUMPOSTI && NumCubiInViaDiDeposito==0 ) {
+		
+		
 			/* tutti i NUMPOSTI cubi sono veramente sul tavolo */
 			/* dico ai prelevatori che possono prelevare */
-			AzionePossibile=PRELIEVOCUBI;
-			DBGpthread_cond_broadcast(&condPrelievo,Plabel);
-			printf("depositatore %s HA RIEMPITO tavolo \n", Plabel);
-			fflush(stdout);
-		}
+	
 
 		/* FINE TERZA PARTE DA COMPLETARE FINO A QUI */
 		DBGpthread_mutex_unlock(&mutex,Plabel); 
