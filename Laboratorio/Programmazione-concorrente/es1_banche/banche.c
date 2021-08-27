@@ -1,4 +1,4 @@
-/* file:  keppall2.c */
+/* file:  es1_banche.c */
 
 #ifndef _THREAD_SAFE
 	#define _THREAD_SAFE
@@ -7,142 +7,133 @@
 	#define _POSIX_C_SOURCE 200112L
 #endif
 
-#include "printerror.h"
 
 #include <unistd.h> 
 #include <stdlib.h> 
 #include <stdio.h> 
-#include <stdint.h>
-#include <inttypes.h>
+#include <stdint.h>	/* uint64_t intptr_t */
+#include <inttypes.h>	/* uint64_t  PRIiPTR */
+#include <sys/time.h>	/* gettimeofday()    struct timeval */
+#include <time.h>	/* nanosleep()   struct timespec */
 #include <pthread.h> 
-#include <time.h>
-#include <sys/time.h>
 
-#include "DBGpthread.h"
 #include "printerror.h"
+#include "DBGpthread.h"
 
-#define NUM_BANCHE 3
+#define NUMBANCHE 3
+#define NUMDEPOSITIPERBANCA 5 
+#define NUMPRELIEVIPERBANCA 4
+/* variabili da proteggere */
+double T[NUMBANCHE]={0.0, 0.0, 0.0 };
+int    N[NUMBANCHE]={0,0,0};
 
-#define NUM_THREADS_DEPOSITO 5
-#define NUM_THREADS_PRELIEVO 4
+/* variabili per la sincronizzazione */
+pthread_mutex_t  mutex;
 
-/* VAR GLOBAL */
-double T[NUM_BANCHE] = {0.0, 0.0, 0.0}; /* amount foreach bank */
-int N[NUM_BANCHE] = {0.0, 0.0, 0.0}; /* num of all operation */
+void *Depositi (void *arg) 
+{ 
+	char Clabel[128];
+	intptr_t indicebanca;
 
-/* var per la sincronizzazione */
-pthread_mutex_t mutex;
+	indicebanca=(intptr_t)arg;
+	sprintf(Clabel,"D%" PRIiPTR "" , indicebanca);
 
-/* deposito */
-void* Deposito(void *arg) {
+	while(1) 
+	{
+		struct timespec ts={0, 100000000L }; /* 1/10 sec */
 
-    char DLabel[128];
-    intptr_t index_bank;
+		sleep(1);
+		DBGpthread_mutex_lock(&mutex,Clabel); 
+		T[indicebanca] += 10.0;
+		N[indicebanca] ++;
+		printf("Deposito: N %d  T %f \n", N[indicebanca], T[indicebanca] );
+		fflush(stdout);
+		nanosleep(&ts,NULL);
 
-    index_bank = (intptr_t) arg;
-    sprintf(DLabel, "D%" PRIiPTR " ", index_bank);
+		DBGpthread_mutex_unlock(&mutex,Clabel); 
+	}
+	pthread_exit(NULL); 
+} 
 
-    while (1) {
-        struct timespec ts = {0, 100000000L };
+void *Prelievi (void *arg) 
+{ 
+	char Clabel[128];
+	intptr_t indicebanca;
 
-        sleep(1);
-        /* ottengo mutua esclusione */
-        DBGpthread_mutex_lock(&mutex, DLabel);
+	indicebanca=(intptr_t)arg;
+	sprintf(Clabel,"P%" PRIiPTR "" , indicebanca);
 
-        /* faccio deposito */
-        T[index_bank] += 10.0;
-        N[index_bank] ++;
+	while(1) 
+	{
+		struct timespec ts={0, 100000000L }; /* 1/10 sec */
 
-        printf("Deposito: N %d, T %f \n", N[index_bank], T[index_bank]);
-        fflush(stdout);
-        nanosleep(&ts, NULL);
+		sleep(1);
+		DBGpthread_mutex_lock(&mutex,Clabel); 
+		T[indicebanca] -=9.0 ;
+		N[indicebanca] ++;
+		printf("Prelievo: N %d  T %f \n", N[indicebanca], T[indicebanca] );
+		fflush(stdout);
+		nanosleep(&ts,NULL);
 
-        /* rilascio mutua esclusione */
-        DBGpthread_mutex_unlock(&mutex, DLabel);
-    }
-    pthread_exit(NULL);
-}
+		DBGpthread_mutex_unlock(&mutex,Clabel); 
+	}
+	pthread_exit(NULL); 
+} 
 
-/* prelievo */
-void* Prelievo(void *arg) {
+void *BancadItalia (void *arg) 
+{ 
+	char Clabel[128];
 
-    char PLabel[128];
-    intptr_t index_bank;
+	sprintf(Clabel,"BancadItalia" );
 
-    index_bank = (intptr_t) arg;
-    sprintf(PLabel, "P%" PRIiPTR " ", index_bank);
+	while(1) 
+	{
+		int i;  int Num=0; double sum=0.0;
 
-    while (1) {
-        struct timespec ts = {0, 100000000L };
+		DBGpthread_mutex_lock(&mutex,Clabel); 
+		for( i=0; i<NUMBANCHE; i++ ) {
+			Num += N[i];
+			sum += T[i];
+		}
+		DBGpthread_mutex_unlock(&mutex,Clabel); 
+		printf("Report BancaDItalia: Num %d  sum %f \n", Num, sum);
+		fflush(stdout);
 
-        sleep(1);
-        /* ottengo mutua esclusione */
-        DBGpthread_mutex_lock(&mutex, PLabel);
+		sleep(30);
+	}
+	pthread_exit(NULL); 
+} 
 
-        /* faccio deposito */
-        T[index_bank] -= 9.0;
-        N[index_bank] ++;
+int main (int argc, char* argv[] ) 
+{ 
+	pthread_t   th; 
+	int  rc;
+	intptr_t i,k;
 
-        printf("Deposito: N %d, T %f \n", N[index_bank], T[index_bank]);
-        fflush(stdout);
-        nanosleep(&ts, NULL);
+	rc = pthread_mutex_init( &mutex, NULL); 
+	if( rc ) PrintERROR_andExit(rc,"pthread_mutex_init failed");
 
-        /* rilascio mutua esclusione */
-        DBGpthread_mutex_unlock(&mutex, PLabel);
-    }
-    pthread_exit(NULL);
-}
+	for(i=0;i<NUMBANCHE;i++) {
+		/* lancio  thread Depositi */
+		for(k=0;k<NUMDEPOSITIPERBANCA;k++) {
+			rc=pthread_create( &th, NULL,Depositi,(void*)i); 
+			if(rc) PrintERROR_andExit(rc,"pthread_create failed");
+		}
+		/* lancio  thread Prelievi */
+		for(k=0;k<NUMPRELIEVIPERBANCA;k++) {
+			rc=pthread_create( &th, NULL,Prelievi,(void*)i); 
+			if(rc) PrintERROR_andExit(rc,"pthread_create failed");
+		}
+	}
 
-void* BancaDiItalia(void *arg) {
-   
-   char BDI_Label[128];
-   sprintf(BDI_Label, "Banca di Italia");
+	/* lancio thread BancadItalia */
+	rc=pthread_create( &th, NULL,BancadItalia,(void*)k); 
+	if(rc) PrintERROR_andExit(rc,"pthread_create failed");
 
-   while (1) {
-       int i; 
-       int num = 0;
-       double sum = 0.0;
+	pthread_exit(NULL); 
 
-       sleep(1);
-       DBGpthread_mutex_lock(&mutex, BDI_Label);
-
-       for (i = 0; i < NUM_BANCHE; i++) {
-           num += N[i];
-           sum += T[i];
-       }
-
-       DBGpthread_mutex_unlock(&mutex, BDI_Label);
-       printf("Report Banca d'Italia: Num %d, sum %f \n", num, sum);
-       fflush(stdout);
-
-       sleep(30);
-   }
-   pthread_exit(NULL);
-}
-
-int main() {
-
-    pthread_t th;
-
-    int rc;
-    intptr_t i, j;
-
-    rc = pthread_mutex_init(&mutex, NULL);
-    if (rc) PrintERROR_andExit(rc, "Failed mutex init");
-
-    for (i = 0; i < NUM_BANCHE; i++) {
-
-        for (j = 0; j < NUM_THREADS_DEPOSITO; j++) {
-            rc = pthread_create(&th, NULL, Deposito, (void*) i);
-            if (rc) PrintERROR_andExit(rc, "Failed pthread create");
-        }
-
-        for (j = 0; j < NUM_THREADS_PRELIEVO; j++) {
-            rc = pthread_create(&th, NULL, Prelievo, (void*) i);
-            if (rc) PrintERROR_andExit(rc, "Failed pthread create");
-        }
-    }
-
-    return 0;
-}
-
+	return(0); 
+} 
+  
+  
+  
